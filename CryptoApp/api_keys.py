@@ -11,8 +11,8 @@ import os
 
 
 TRAINING_API_KEYS = {
-    "challenge_solver": "fake_api_key_training_solver_4a9c1e8b7d3f",
-    "audit_service": "fake_api_key_training_audit_2f6d9a0c5b1e",
+    "challenge_solver": "FAKE_API_KEY_FOR_CHALLENGE_SOLVER",
+    "audit_service": "FAKE_API_KEY_FOR_AUDIT_SERVICE",
 }
 
 # Provider-shaped, explicitly fake values for documentation and local demos.
@@ -20,25 +20,25 @@ TRAINING_API_KEYS = {
 EXTERNAL_SERVICE_API_KEYS = {
     "openai": {
         "environment_variable": "OPENAI_API_KEY",
-        "example": "sk-proj-LAB7xK2mQ9vR4pT8nW3cY6hJ1sF5dA0uE2iB9oN4gZ7kP3",
+        "example": "sk-proj-FAKE1234567890abcdef1234567890abcdef",
         "authentication": "bearer",
     },
 
     "github": {
         "environment_variable": "GITHUB_TOKEN",
-        "example": "github_pat_LAB01H7K9M4Q2V8R5T3N6W1C0Y9F4D7S2A8B5E",
+        "example": "github_pat_FAKE1234567890abcdef1234567890abcdef12345678",
         "authentication": "bearer",
     },
 
     "google_maps": {
         "environment_variable": "GOOGLE_MAPS_API_KEY",
-        "example": "AIzaSyLAB7K2mQ9vR4pT8nW3cY6hJ1sF5dA0uE",
+        "example": "FAKE1234567890abcdef1234567890abcdef",
         "authentication": "query",
     },
 
     "stripe": {
         "environment_variable": "STRIPE_API_KEY",
-        "example": "sk_test_LAB4Q7mK2vN9pR5tW8xC3yH6jF1sD0aE2",
+        "example": "sk_test_FAKE1234567890abcdef1234567890abcdef",
         "authentication": "bearer",
     },
 }

@@ -48,3 +48,18 @@ Install the dependency first if necessary:
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+## Work-in-progress HTTP app
+
+`app.py` integrates the cryptographic challenge, the authorized solver, and
+the external-service configuration. Its audit delivery endpoint deliberately
+returns `501 Not Implemented`: it is **Work in progress** and does not make an
+external request. Start it locally with:
+
+```bash
+python app.py
+```
+
+Available routes are `GET /health`, `POST /challenges`, `POST /solve`, and the
+placeholder `POST /audit/send`. A challenge response includes a
+`demo_passphrase` only for this local laboratory application.
