@@ -18,6 +18,16 @@ external integration reads its real key from the documented environment variable
 through `get_external_api_key(service)`; keep those real values in a secret
 manager or environment variables, never in source control.
 
+`challenge.py` can optionally send an audit event using one of those external
+integrations. It sends no credentials or passphrase, only the event name and
+the envelope version. This requires both a real key in the provider's
+environment variable and an HTTPS endpoint:
+
+```bash
+set OPENAI_API_KEY=your_real_key
+python challenge.py --audit-service openai --audit-url https://audit.example/events
+```
+
 ## Run
 
 Generate a challenge:
