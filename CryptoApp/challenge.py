@@ -1,24 +1,38 @@
+"""Generate an authenticated credential challenge for authorized solvers."""
 
-import base64, hashlib, json, secrets
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from __future__ import annotations
 
-WORDS=["dragon","monkey","shadow","letmein","football","sunshine","princess","welcome","password","trustno1"]
+import secrets
 
-def key(word): return hashlib.md5(word.encode()).digest()
+from crypto_service import encrypt_json
 
-user=f"user_{secrets.token_hex(3)}"
-pwd=secrets.token_urlsafe(8)
-word=secrets.choice(WORDS)
-pt=json.dumps({"username":user,"password":pwd}).encode()
-ct=base64.b64encode(AES.new(key(word),AES.MODE_ECB).encrypt(pad(pt,16))).decode()
 
-print("=== Authentication Challenge ===")
-print("Ciphertext:\n",ct)
-while True:
-    u=input("Username: ")
-    p=input("Password: ")
-    if u==user and p==pwd:
-        print("Authenticated!\nFLAG{authentication_successful}")
-        break
-    print("Invalid credentials.")
+def create_challenge(passphrase: str) -> tuple[dict[str, str], str]:
+    """Create credentials and return them with their authenticated envelope."""
+    credentials = {
+        "username": f"user_{secrets.token_hex(6)}",
+        "password": secrets.token_urlsafe(24),
+    }
+    envelope = encrypt_json(credentials, passphrase)
+    return credentials, envelope.to_json()
+
+
+def main() -> None:
+    passphrase = secrets.token_urlsafe(32)
+    credentials, envelope = create_challenge(passphrase)
+    print("=== Secure Authentication Challenge ===")
+    print("Encrypted envelope:")
+    print(envelope)
+    print("\nFor this local demo only, give the authorized solver this passphrase:")
+    print(passphrase)
+    while True:
+        username = input("Username: ")
+        password = input("Password: ")
+        if (username, password) == (credentials["username"], credentials["password"]):
+            print("Authenticated!\nFLAG{authentication_successful}")
+            return
+        print("Invalid credentials.")
+
+
+if __name__ == "__main__":
+    main()

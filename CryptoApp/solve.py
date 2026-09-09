@@ -1,101 +1,45 @@
+"""Decrypt a Crypto Authentication Lab envelope after API-key authorization."""
+
+from __future__ import annotations
+
 import argparse
-import base64
-import hashlib
-import json
+import hmac
 import sys
 
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
+from api_keys import TRAINING_API_KEYS
+from crypto_service import DecryptionError, decrypt_json
 
 
-WORDS = [
-    "dragon",
-    "monkey",
-    "shadow",
-    "letmein",
-    "football",
-    "sunshine",
-    "princess",
-    "welcome",
-    "password",
-    "trustno1",
-]
+def is_authorized(api_key: str) -> bool:
+    """Check the local training API key without leaking comparison timing."""
+    return hmac.compare_digest(api_key, TRAINING_API_KEYS["challenge_solver"])
 
 
-def derive_key(word: str) -> bytes:
-    return hashlib.md5(word.encode("utf-8")).digest()
-
-
-def try_candidate(ciphertext: bytes, word: str):
-    cipher = AES.new(derive_key(word), AES.MODE_ECB)
-
-    try:
-        plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
-        decoded = plaintext.decode("utf-8")
-        data = json.loads(decoded)
-    except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    username = data.get("username")
-    password = data.get("password")
-
+def solve(envelope: str, passphrase: str, api_key: str) -> dict[str, str]:
+    """Return validated credentials for an authorized caller."""
+    if not is_authorized(api_key):
+        raise PermissionError("Invalid solver API key.")
+    payload = decrypt_json(envelope, passphrase)
+    username, password = payload.get("username"), payload.get("password")
     if not isinstance(username, str) or not isinstance(password, str):
-        return None
-
-    return word, username, password, decoded
-
-
-def solve(ciphertext_b64: str):
-    try:
-        ciphertext = base64.b64decode(ciphertext_b64.strip(), validate=True)
-    except (ValueError, TypeError) as exc:
-        raise ValueError("Ciphertext is not valid Base64.") from exc
-
-    if not ciphertext or len(ciphertext) % AES.block_size != 0:
-        raise ValueError(
-            "Decoded ciphertext length must be a non-zero multiple of 16 bytes."
-        )
-
-    for word in WORDS:
-        result = try_candidate(ciphertext, word)
-        if result is not None:
-            return result
-
-    return None
+        raise DecryptionError("Payload does not contain string credentials.")
+    return {"username": username, "password": password}
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Brute-force the Crypto Authentication Lab ciphertext."
-    )
-    parser.add_argument(
-        "ciphertext",
-        nargs="?",
-        help="Base64 ciphertext. If omitted, the script prompts for it.",
-    )
+    parser = argparse.ArgumentParser(description="Decrypt an authorized AES-256-GCM challenge.")
+    parser.add_argument("envelope", help="JSON envelope emitted by challenge.py")
+    parser.add_argument("passphrase", help="Passphrase supplied by the challenge owner")
+    parser.add_argument("--api-key", required=True, help="Local training solver API key")
     args = parser.parse_args()
-
-    ciphertext_b64 = args.ciphertext or input("Ciphertext: ").strip()
-
     try:
-        result = solve(ciphertext_b64)
-    except ValueError as exc:
+        credentials = solve(args.envelope, args.passphrase, args.api_key)
+    except (PermissionError, DecryptionError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
-        return 2
-
-    if result is None:
-        print("No valid key word was found.", file=sys.stderr)
         return 1
-
-    word, username, password, plaintext = result
-    print("Ciphertext successfully decrypted.")
-    print(f"Key word : {word}")
-    print(f"Username : {username}")
-    print(f"Password : {password}")
-    print(f"Plaintext: {plaintext}")
+    print("Envelope decrypted and authenticated.")
+    print(f"Username: {credentials['username']}")
+    print(f"Password: {credentials['password']}")
     return 0
 
 

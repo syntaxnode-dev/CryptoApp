@@ -1,22 +1,40 @@
 # Crypto Authentication Lab
 
-## Instructor solve script
+This version demonstrates an authorized credential exchange with modern
+authenticated encryption. `challenge.py` serializes credentials in an
+AES-256-GCM envelope, using a fresh 128-bit salt and a unique 96-bit nonce for
+each encryption. The AES key is derived from the supplied passphrase through
+the memory-hard `scrypt` KDF.
 
-The included `solve.py` brute-forces the Base64 ciphertext using the lab's
-known-word list.
+`solve.py` does not brute-force credentials. It authenticates its caller with a
+local training API key, then verifies and decrypts the envelope with the
+passphrase provided by the challenge owner. GCM verification rejects changed,
+truncated, or incorrectly keyed ciphertexts.
 
-Run it with the ciphertext as an argument:
+The values in `api_keys.py` are intentionally fake training keys and are meant
+to be committed. It also contains provider-shaped examples for OpenAI, GitHub,
+Google Maps, and Stripe. They are not valid credentials for any service. An
+external integration reads its real key from the documented environment variable
+through `get_external_api_key(service)`; keep those real values in a secret
+manager or environment variables, never in source control.
+
+## Run
+
+Generate a challenge:
 
 ```bash
-python solve.py 'BASE64_CIPHERTEXT'
+python challenge.py
 ```
 
-Or run it without an argument and paste the ciphertext when prompted:
+Copy the JSON envelope and the demo passphrase it prints, then decrypt it with
+the fake `challenge_solver` key from `api_keys.py`:
 
 ```bash
-python solve.py
+python solve.py 'JSON_ENVELOPE' 'DEMO_PASSPHRASE' --api-key 'fake_api_key_training_solver_4a9c1e8b7d3f'
 ```
 
-The script derives each candidate AES-128 key as `MD5(word)`, decrypts with
-AES-ECB, removes PKCS#7 padding, and accepts only valid JSON containing string
-`username` and `password` fields.
+Install the dependency first if necessary:
+
+```bash
+python -m pip install -r requirements.txt
+```
